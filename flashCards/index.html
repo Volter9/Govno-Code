@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html manifest="cache.manifest">
+	<head>
+		<title>Flash Cards</title>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+		<link rel="apple-touch-icon" href="icon.png" />
+		<link rel="stylesheet" type="text/css" href="style.css" />
+		<script type="text/javascript">
+			Object.prototype.isEmpty = function () {
+				for (var key in this) {
+					if (key  != null && key != "isEmpty") {
+						return false;
+					}
+				}
+				
+				return true;
+			};
+			
+			function WebDatabase() {
+				if (WebDatabase.__instance != null)
+					return WebDatabase.__instance;
+				else {
+					WebDatabase.__instance = this;
+					var db = WebDatabase.__instance;
+					var params = {
+						db: "Flashcards",
+						version: "1.0",
+						name: "Flash Cards Manager",
+						size: 1024 * 1024,
+					};
+					
+					db.transaction = function (func) {
+						this.context.transaction(func);
+					};
+					
+					db.changeParameter = function (key,value) {
+						if (params[key] != undefined) {
+							params[key] = value;
+						}
+					};
+					
+					db.context = null;
+					db.open = function () {
+						this.context = openDatabase(params.db, params.version, params.name, params.size);
+					};
+				}
+			}
+			
+			function Card(edit,obj,first) {
+				if (edit) {
+					Card.edit = this;
+				}
+				
+				if (!first) first = false;
+				this.first = first;
+				this.flipped = false
+				
+				var self = this;
+				obj = (obj) ? obj : {};
+				
+				this.editable = edit;
+				this.container = document.getElementById('cardContainer');
+				this.card = document.createElement('div');
+				this.card.setAttribute('class','card');
+				
+				this.title = null;
+				this.description = null;
+				this.answer = null;
+				
+				this.properties = obj;
+				
+				this.delete = function deleteTheCard() {
+					this.app.db.transaction(function (tx) {
+						var sql = "DELETE FROM cards WHERE id="+self.properties.id;
+						
+						tx.executeSql(sql,[],self.clear,self.app.onError);
+					});
+				};
+				
+				this.flip = function () {
+					if (this.flipped) {
+						this.description.style.display = "block";
+						this.answer.style.display = "none";
+					}
+					else {
+						this.answer.style.display = "block";
+						this.description.style.display = "none";
+					}
+					
+					this.flipped = !this.flipped;
+				};
+				
+				this.init = function () {
+					if (!this.properties.isEmpty()) {
+						this.deleteAnchor = document.createElement('a');
+						this.deleteAnchor.innerHTML = "[DELETE]";
+						this.deleteAnchor.onclick = function () {
+							self.delete();
+						};
+						
+						this.flipButton = document.createElement('button');
+						this.flipButton.innerHTML = 'Flip!';
+						this.flipButton.setAttribute('class','flipButton');
+						this.flipButton.onclick = function () {
+							self.flip();
+						};
+						
+						this.title = document.createElement('div');
+						this.title.setAttribute('class','title');
+						this.description = document.createElement('div');
+						this.answer = document.createElement('div');
+						
+						this.title.innerHTML = this.properties.title + ' - Date: ' + this.properties.date + ' ';
+						this.description.innerHTML = this.properties.description;
+						this.answer.innerHTML = this.properties.answer;
+						
+						this.answer.style.display = 'none';
+					}
+					else if (this.editable) {
+						this.title = document.createElement('input');
+						this.title.placeholder = 'Title';
+						
+						this.description = document.createElement('textarea');
+						this.description.placeholder = 'Description';
+						
+						this.answer = document.createElement('textarea');
+						this.answer.placeholder = 'Answer';
+						
+						var submit = document.createElement('input');
+						submit.type = 'submit';
+						submit.value = 'Submit';
+						submit.onclick = function () {
+							self.addSubmit();
+						};
+						
+						var cancel = document.createElement('input');
+						cancel.type = 'submit';
+						cancel.value = 'Clear';
+						cancel.onclick = function () {
+							self.clear();
+						};
+						
+						this.submit = submit;
+						this.cancel = cancel;
+					}
+					
+					this.addToView();
+				};
+				
+				this.clear = function () {
+					self.card.parentNode.removeChild(self.card);
+					self.app.deleteCard(self.index);
+					
+					if (!self.editable) {
+						self.app.data.splice(self.index,1);
+						
+						if (self.app.data.length == 0) {
+							document.getElementById('noFlashCards').style.display = 'block';
+						}
+					}
+					
+					if (self.editable && self.app.data.length == 0) {
+						document.getElementById('noFlashCards').style.display = 'block';
+						Card.edit = null;
+					}
+				};
+				
+				this.addSubmit = function () {
+					if (self.editable) {
+						var inputs = [self.title.value,self.description.value,self.answer.value];
+						var empty = false;
+						var emptyField = '';
+						
+						for (var i = 0; i < inputs.length; i++) {
+							var inp = inputs[i];
+							
+							if (inp == '') {
+								empty = true;
+								
+								break;
+							}
+						}
+						
+						if (!empty) {
+							self.app.db.transaction(function (tx) {
+								var sql = "INSERT INTO cards (title,description,answer,date) VALUES (?,?,?,date())";
+								
+								tx.executeSql(sql,[self.title.value,self.description.value,self.answer.value],null,self.app.onError);
+								tx.executeSql("SELECT * FROM cards ORDER BY id DESC LIMIT 1",null,self.success,self.app.onError);
+							});
+						}
+						else {
+							alert('The field is empty!');
+						}
+					}
+				};
+				
+				this.success = function (tx,result) {
+					if (self.editable) {
+						self.card.parentNode.removeChild(self.card);
+						self.app.deleteCard(self.index,1);
+						
+						var dating = result.rows.item(0);
+						
+						var card = new Card(false,dating,true);
+						card.app = self.app;
+					
+						self.app.data.push(dating);
+						self.app.cards.push(card);
+						Card.edit = null;
+					}
+				};
+				
+				this.addToView = function () {
+					if (this.editable || this.first) {
+						this.container.insertBefore(this.card,this.container.firstChild);
+					}
+					else {
+						this.container.appendChild(this.card);
+					}
+					
+					this.card.appendChild(this.title);					
+					this.card.appendChild(this.description);
+					this.card.appendChild(this.answer);
+					
+					if (this.editable) {
+						this.card.appendChild(this.submit);
+						this.card.appendChild(this.cancel);
+					}
+					else {
+						this.title.appendChild(this.deleteAnchor);
+						this.card.appendChild(this.flipButton);
+					}
+				};
+				
+				this.init();
+			}
+			
+			// An App constructor
+			function App() {
+				var self = this;
+				
+				this.cards = [];
+				this.db = new WebDatabase();
+				this.addButton = document.getElementById('addButton');
+				this.addButton.onclick = function () {
+					self.addEditCard();
+				};
+				
+				this.deleteCard = function (index) {
+					this.cards.splice(index,1);
+					
+					for (var i = 0; i < this.cards.length; i++) {
+						this.cards[i].index = i;
+					}
+				};
+				
+				this.addEditCard = function () {
+					if (Card.edit == null) {
+						var card = new Card(true);
+						card.app = this;
+						card.index = this.cards.length;
+						
+						this.label.style.display = "none";
+						
+						this.cards.push(card);
+					}
+				};
+				
+				this.label = document.createElement('h1');
+				this.label.innerHTML = "No flash cards here...";
+				this.label.id = 'noFlashCards';
+				
+				this.data = [];
+				this.init = function () {
+					console.log("App.init");
+					this.db.open();
+					this.db.transaction(function createTable(tx) {
+						// Table Creation
+						var sql = "CREATE TABLE IF NOT EXISTS cards (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, title varchar(255), description text, answer text, date DATE)";
+						tx.executeSql(sql,null,null,self.onError);	
+						// Select all in table cards
+						sql = "SELECT * FROM cards ORDER BY id DESC";
+						tx.executeSql(sql,[],self.getAllData,self.onError);
+					});
+				};
+				
+				this.getAllData = function (tx,result) {
+					var data = [];
+					
+					for (var i = 0; i < result.rows.length; i++) {
+						data[i] = result.rows.item(i);
+					}
+					
+					self.data = data;
+					if (self.data.length > 0) {
+						self.loadCards(self.data);
+					}
+					else {
+						document.getElementById('cardContainer').appendChild(self.label);
+					}
+				};
+				
+				this.loadCards = function (data) {
+					for (var i = 0; i < data.length; i++) {
+						var cell = data[i];
+						var card = new Card(false,cell);
+						card.index = i;
+						card.app = this;
+						
+						this.cards.push(card);
+					}
+				};
+				
+				this.onError = function (tx, error) {
+					alert("Web SQL error: "+error.message);
+				};
+				
+				this.init();
+			}
+			
+			var app;
+			window.addEventListener("DOMContentLoaded", function onload() {
+				app = new App();
+			});
+			
+			window.addEventListener('touchbegin',function (e) {
+				//e.preventDefault();
+			});
+			
+			document.getElemenById('updateButton').onclick = function () {
+				var appCache = window.applicationCache;
+				
+				if (confirm('You want to update this application?')) {
+					appCache.update();
+					
+					if (appCache.status == window.applicationCache.UPDATEREADY) {
+						appCache.swapCache();
+					  
+						window.location.reload();
+					}
+				}
+			};
+		</script>
+	</head>
+	<body>
+		<div id="wrap">
+			<div id="topbar">
+				<div id="topbarWrapper">
+					<div id="title">Flash Cards <button id="updateButton">Update App</button></div>
+					<button id="addButton">+</button>
+				</div>
+			</div>
+			<div id="cardContainer">
+				
+			</div>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,11 @@
+AddDefaultCharset UTF8 
+
+ErrorDocument 404 http://localhost/kotoposter/index.php?controller=error&action=index&args=404
+ErrorDocument 403 http://localhost/kotoposter/index.php?controller=error&action=index&args=403
+
+RewriteEngine on
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+RewriteRule ^(.*)\/ index.php?controller=$1 [L,QSA]

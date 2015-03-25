@@ -1,0 +1,14 @@
+<div id="sidebar">
+	<div class="sidebar_block">
+		<span>Categories:</span>
+		<ul class="sidebar_cat_menu">
+			<? foreach($catbar as $val): ?>
+				<li class="sidebar_cat_cell">
+					<a href="index.php?controller=category&args=<?=$val['id']?>" title="<?=$val['description']?>">
+						<?=$val['name']?>
+					</a>
+				</li>
+			<? endforeach; ?>
+		</ul>
+	</div>
+</div>

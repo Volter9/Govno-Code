@@ -1,0 +1,72 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<? include("core/view/head.html"); ?>
+	<body>
+		<!--[if IE]><table align="center"><![endif]-->
+		<div id="wrapper">
+			<div id="mainblock">
+				<? include("core/view/header.html") ?>
+				<div id="body">
+					<div id="contentblock">
+					<div id="content">
+						<div class="content_block">
+							<? if(isset($message)): ?>
+								<div>
+									<?=$message?>
+								</div>
+							<? endif; ?>
+							<div class="content_block_title" style="">
+								Add Poster.
+							</div>
+							<div style="padding: 10px;">
+								<form method="post" enctype="multipart/form-data" action="">
+									<fieldset class="poster_form">
+										<legend>Add Poster:</legend>
+										<p>Here you can add poster, bla, bla, blalala...</p>
+										<div class="poster_form_cell">
+											<label><input type="text" name="name" /> Name</label>
+										</div>
+										<div class="poster_form_cell">
+											<label><input type="text" name="keywords" /> Keywords</label>
+										</div>
+										<div class="poster_form_cell">
+											<label>
+												<select name="category">
+													<option selected="selected">Select Category</option>
+													<optgroup label="Categories">
+													<? foreach($catbar as $val): ?>
+														<option value="<?=$val['id']?>"><?=$val['name']?></option>
+													<? endforeach; ?>
+													</optgroup>
+												</select>
+												Category
+											</label>
+										</div>
+										<div class="poster_form_cell">
+											<label><input type="text" name="cost" /> Cost</label>
+										</div>
+										<div class="poster_form_cell">
+											<label><textarea name="description"></textarea> Description</label>
+										</div>
+										<div class="poster_form_cell">
+											<input type="text" id="filetextposter" value="Click on me..." onclick="document.getElementById('fileposter').click()" onchange="alert(document.getElementById('fileposter').value)" />
+											<input type="file" id="fileposter" name="poster" style="display: none;" onchange="document.getElementById('filetextposter').value = this.value" /> Poster
+										</div>
+										<div class="poster_form_cell">
+											<input type="submit" name="submit" value="Submit" />
+										</div>
+									</fieldset>
+								</form>
+							</div>
+						</div>
+					</div>
+					<? include("core/view/sidebar.html"); ?>
+					</div>
+				</div>
+			</div>
+			<? include("core/view/footer.html"); ?>
+		</div>
+		<!--[if IE]></table><![endif]-->
+	</body>
+</html>

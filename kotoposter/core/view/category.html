@@ -1,0 +1,38 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<? include("core/view/head.html"); ?>
+	<body>
+		<!--[if IE]><table align="center"><![endif]-->
+		<div id="wrapper">
+			<div id="mainblock">
+				<? include("core/view/header.html") ?>
+				<div id="body">
+					<div id="contentblock">
+						<div id="content">
+							<div style="width: 100%;">
+								<? if(isset($category)): ?>
+									<p style="padding: 10px; background: #222238; margin: 0px; margin-right: 4px; color: #fff; border-radius: 10px 10px 0px 0px">
+										<?=$category['text']?>
+									</p>
+								<? endif; ?>
+								<? if(isset($posters)): ?>
+									<? foreach($posters as $val): ?>
+										<div class="poster_block">
+											<img src="<?=$val['mini']?>" alt="<?=$val['description']?>" title="<?=$val['description']?>" class="poster_img" />
+											<div class="poster_title"><?=$val['name']?></div>
+											
+										</div>
+									<? endforeach; ?>
+								<? endif; ?>
+							</div>
+						</div>
+						<? include("core/view/sidebar.html"); ?>
+					</div>
+				</div>
+			</div>
+			<? include("core/view/footer.html"); ?>
+		</div>
+		<!--[if IE]></table><![endif]-->
+	</body>
+</html>

@@ -1,0 +1,65 @@
+<head>
+	<title><? if(isset($title)) echo $title; ?></title>
+	<meta charset="UTF-8" />
+	<meta name="description" value="<? if(isset($meta_d)) echo $meta_d; ?>" />
+	<meta name="keywords" value="<? if(isset($meta_k)) echo $meta_k; ?>" />
+	<link href="style/style.css" rel="stylesheet" type="text/css" />
+	<script>
+		var login, pass, form;
+
+		function giveAClue(text, id) {
+			var element = document.getElementById(id);
+			element.value = text;
+
+			element.onfocus = function() {
+				if(this.value == text || this.style.color == "") {
+					this.value = "";
+					this.style.color = "#000";
+				}
+			};
+
+			element.onblur = function() {
+				if(this.value.length <= 0 || this.style.color == "#000") {
+					this.value = text;
+					this.style.color = "";
+				}
+			};
+
+			return element;
+		}
+
+
+		window.addEventListener("DOMContentLoaded", load);
+
+		function load() {
+			form = document.getElementById("login_form");
+
+			login = giveAClue("login", "panellogin");
+			pass = giveAClue("password", "panelpass");
+
+			login.onkeyup = function(e) {
+				var e = e || window.event;
+
+				if(e.keyCode == 13) {
+					if(this.value.length > 0 && pass.value.length > 0 && pass.value != "password") {
+						form.submit();
+					} else {
+						pass.focus();
+					}
+				}
+			};
+
+			pass.onkeyup = function(e) {
+				var e = e || window.event;
+
+				if(e.keyCode == 13) {
+					if(this.value.length > 0 && login.value.length > 0 && login.value != "login") {
+						form.submit();
+					} else {
+						login.focus();
+					}
+				}
+			};
+		}
+	</script>
+</head>
